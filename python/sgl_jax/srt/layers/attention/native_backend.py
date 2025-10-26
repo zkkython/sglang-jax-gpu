@@ -10,7 +10,6 @@ from sgl_jax.srt.model_executor.forward_batch_info import ForwardBatch, ForwardM
 from sgl_jax.srt.utils.jax_utils import is_tpu_runtime
 
 
-@register_pytree_node_class
 class NativeAttention(AttentionBackend):
     """Native Attention layer for variable-length sequences using ForwardBatch."""
 
@@ -298,3 +297,15 @@ def _apply_decode_mask(attn_weights: jax.Array, seq_lengths: jax.Array):
     mask_value = jnp.finfo(attn_weights.dtype).min
     final_mask = final_mask[None, :, :]
     return jnp.where(final_mask, attn_weights, mask_value)
+
+
+# Safely register the PyTreeDef type to avoid duplicate registration errors
+try:
+    register_pytree_node_class(NativeAttention)
+except ValueError as e:
+    if "Duplicate custom PyTreeDef type registration" in str(e):
+        # Already registered, ignore the error
+        pass
+    else:
+        # Re-raise if it's a different error
+        raise
